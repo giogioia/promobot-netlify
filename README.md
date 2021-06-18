@@ -6,5 +6,5 @@ Static website hosted on Netlify for distributing an executable script (-> https
 
 User journey:
 
-User downloads the executable from the website (https://el-promobot.netlify.app/). 
-When executed, the script runs another script hosted on netlify (https://el-promobot.netlify.app/code.py). This was made so that any future update could be done simpy by updating the online code without having to replace the executable.
+User downloads the executable from the website.
+When executed, the app runs another script hosted on netlify (https://el-promobot.netlify.app/code.py). This was made so that any future update could be done simply by updating the online code without having to replace the executable.
