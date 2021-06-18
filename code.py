@@ -540,8 +540,8 @@ class Promobot:
             except (KeyboardInterrupt, Exception):
                 Promobot.df_to_excel()
 
-    '''main'''
-    def main():
+    '''driver'''
+    def driver():
         try:
             '''initiation code'''
             Promobot.print_bot_name()
