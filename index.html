@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel='shortcut icon' type='image/x-icon' href='./assets/favicon.ico' />
+        <link rel="preconnect" href="https://fonts.gstatic.com">
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
+        <script src="https://kit.fontawesome.com/0401ca0a78.js" crossorigin="anonymous"></script>
+        <style>
+
+        html *
+        {
+            /* color: #000; */
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .body {
+        	background-color:#FEB636;
+            padding-top:3em;
+            margin: 1em;
+        }
+
+        .button {
+          border-radius:7px;
+          padding: 15px 32px;
+          text-align: center;
+          text-decoration: none;
+          display: inline-block;
+          font-size: 1em;
+          margin: 4px 15px;
+          cursor: pointer;
+        }
+
+        .num {
+            height: 80px;
+        }
+
+        .steps {
+            margin: 1em;
+            width: 15em;
+            margin-bottom:5em;
+        }
+
+        #main {
+            margin-bottom: 1em;
+        }
+
+        .title {
+             font-size:6.2em;
+             margin-bottom:-0.55em;
+            }
+
+        #icon {
+            height: 100px;
+            transform: rotate(250deg);
+            margin-right: 23.5em;
+        }
+
+        #button1 {
+        	border: none;
+        	background-color: #13916F;
+            font-weight: 600;
+            color: white !important;
+            font-size: 1.2em;
+        }
+
+        #button2 {
+        	background-color: transparent;
+            border: 2px dotted white;
+        }
+        </style>
+    </head>
+    <body class="body">
+        <div style="text-align:center">
+            <h2>Glovo Italy presents</h2>
+            <div id='main'>
+                <h1 class="title" style=''>EL PromoBot</h1>
+                <img src="./assets/icon.png" alt="icon" id="icon">
+            </div>
+            <div style="display:block;margin-bottom:3em">
+                <h2>Automating Partner Promotions Insertion</h2>
+            </div>
+            <div style="padding-top:5px">
+                <a href="./assets/Promobot.zip" download><button class="button" id="button1"><i class="far fa-arrow-alt-circle-down"></i> Download</button></a>
+                <!-- <button onclick="window.open('https://docs.google.com/document/d/1n8coCdvxB3zvXHWaILj_BFtQsF31MAbaZcm0m71Z_Ik/edit?usp=sharing')" class="button" id="button2"><i class="fas fa-book"></i> Instructions & documentation</button> -->
+                <a href="https://docs.google.com/document/d/1n8coCdvxB3zvXHWaILj_BFtQsF31MAbaZcm0m71Z_Ik/edit?usp=sharing" target="_blank"><button class="button" id="button2"><i class="fas fa-book"></i> Instructions & documentation</button></a>
+            </div>
+            <div style="margin-top:6em">
+                <h2>How to use it?</h2>
+                <div style="display:flex; justify-content:center; margin:1em; flex-wrap: wrap;">
+                    <div class="steps">
+                        <img src="./assets/1.png" alt='1' class="num">
+                        <h3>Read the documentation</h3>
+                    </div>
+                    <div class="steps">
+                        <img src="./assets/2.png" alt='2' class="num">
+                        <h3>Download the bot</h3>
+                    </div>
+                    <div class="steps">
+                        <img src="./assets/3.png" alt='3' class="num">
+                        <h3>Enjoy limitless promo automation</h3>
+                    </div>
+                </div>
+                <div style='display:block'>
+                    <p style="font-size:0.9em; font-style: italic">El PromoBot - all right reserved © 2021</p>
+                    <div>
+                        <a href="" target="_blank" style="color:white; text-decoration: none">GitHub repo website</a>
+                        <span>   |   </span>
+                        <a href="" target="_blank" style="color:white; text-decoration: none;">GitHub repo executable app</a>
+                    </div>
+                </div>    
+            </div>
+        </div>
+    </body>
+</html>
+
