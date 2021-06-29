@@ -168,7 +168,7 @@ class Promobot:
 
     #custom function for set_input(): extracts dataframe once input name is set
     def import_data(input_file):
-        global df_promo, no_prime, no_products, no_store_address
+        global df_promo, no_prime, no_products, no_store_address, no_budget, no_commissionOnDiscountedPrice
         #import data
         df_promo = pd.read_excel(input_file, usecols=lambda x: 'Unnamed' not in x, engine='openpyxl')
         #clean empty rows
@@ -185,7 +185,7 @@ class Promobot:
                 df_promo.loc[:,'Promo_Name'] = df_promo.loc[:,'Promo_Name'].str.strip()
             except AttributeError:pass
             try:
-                df_promo.loc[:,'Promo_Type ("FLAT"/"FREE"/"XX%")'] = df_promo.loc[:,'Promo_Type ("FLAT"/"FREE"/"XX%")'].str.strip()
+                df_promo.loc[:,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")'] = df_promo.loc[:,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")'].str.strip()
             except AttributeError:pass
             #Only Prime
             try:
@@ -197,6 +197,26 @@ class Promobot:
                     no_prime = True
                 else:
                     no_prime = False
+            #Budget
+            try:
+                df_promo.loc[:,'Budget']
+            except KeyError:
+                no_budget = True
+            else:
+                if pd.notna(df_promo.loc[:,'Budget']).sum() == 0:
+                    no_budget = True
+                else:
+                    no_budget = False
+            #no_commissionOnDiscountedPrice     
+            try:
+                df_promo.loc[:,'Commission_On_Discounted_Price'] = df_promo.loc[:,'Commission_On_Discounted_Price'].str.strip()
+            except KeyError:
+                no_commissionOnDiscountedPrice = True
+            else:
+                if pd.notna(df_promo.loc[:,'Commission_On_Discounted_Price']).sum() == 0:
+                    no_commissionOnDiscountedPrice = True
+                else:
+                    no_commissionOnDiscountedPrice = False
             #Pructs columns
             try:
                 df_promo.loc[:,list(map(lambda x: 'Product' in x, list(df_promo)))]
@@ -283,6 +303,16 @@ class Promobot:
                         print('')
                         break
 
+    def is_number(x):
+        if isinstance(x, str):
+            if x.isdigit(): return True
+            else: return False
+        else:
+            try: 
+                x += 0
+            except TypeError: return False
+            else: return True
+
     '''promo creation'''
     def p_type(promo_type):
         if type(promo_type) == 'str':
@@ -291,8 +321,12 @@ class Promobot:
             return 'FLAT_DELIVERY'
         elif promo_type == 'FREE':
             return 'FREE_DELIVERY'
-        else:
+        elif promo_type == '2for1':
+            return 'TWO_FOR_ONE'
+        elif Promobot.is_number(promo_type) or (isinstance(promo_type,str) and '%' in promo_type):
             return 'PERCENTAGE_DISCOUNT'
+        else:
+            raise ValueError('INVALID PROMO TYPE')
 
     def del_fee(promo_type):
         if promo_type == 'FLAT':
@@ -303,13 +337,14 @@ class Promobot:
             return None
 
     def perc(promo_type):
-        if Promobot.p_type(promo_type) == 'FLAT_DELIVERY' or Promobot.p_type(promo_type) == 'FREE_DELIVERY':
-            return None
-        elif Promobot.p_type(promo_type) == 'PERCENTAGE_DISCOUNT':
+        if Promobot.p_type(promo_type) == 'PERCENTAGE_DISCOUNT':
             if type(promo_type) == 'str':
                 return int((promo_type).strip('%'))
             else:
                 return int(promo_type)
+        else:
+            return None
+
 
     def strat(subsidy):
         return f'ASSUMED_BY_{subsidy}'
@@ -397,6 +432,26 @@ class Promobot:
             else:
                 return False
 
+    def with_budget(n):
+        if no_budget:
+            return None
+        else:
+            try:
+                int(df_promo.at[n,'Budget'])
+            except ValueError:
+                return None
+            else:
+                return int(df_promo.at[n,'Budget'])
+    
+    def commissionOnDiscountedPrice(n):
+        if no_commissionOnDiscountedPrice:
+            return None
+        else:
+            if df_promo.at[n,'Commission_On_Discounted_Price'] == 'yes':
+                return True
+            else:
+                return False
+                
     def creation(n):
         if df_promo.at[n,'Status'] == 'created':
             print(n,'already created')
@@ -404,9 +459,9 @@ class Promobot:
             url = 'https://adminapi.glovoapp.com/admin/partner_promotions'
             payload = {"name": df_promo.at[n,'Promo_Name'],
                         "cityCode": df_promo.at[n,'City_Code'],
-                        "type": Promobot.p_type(df_promo.at[n,'Promo_Type ("FLAT"/"FREE"/"XX%")']),
-                        "percentage": Promobot.perc(df_promo.at[n,'Promo_Type ("FLAT"/"FREE"/"XX%")']),
-                        "deliveryFeeCents": Promobot.del_fee(df_promo.at[n,'Promo_Type ("FLAT"/"FREE"/"XX%")']),
+                        "type": Promobot.p_type(df_promo.at[n,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")']),
+                        "percentage": Promobot.perc(df_promo.at[n,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")']),
+                        "deliveryFeeCents": Promobot.del_fee(df_promo.at[n,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")']),
                         "startDate": Promobot.time_code('start',df_promo.at[n,"Start_Date (dd/mm/yyyy)"]),
                         "endDate": Promobot.time_code('end',df_promo.at[n,"End_Date (included)"]),
                         "openingTimes": None,
@@ -414,16 +469,16 @@ class Promobot:
                                     "paymentStrategy": Promobot.paymentStrat((df_promo.at[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\")']).strip().upper()),
                                     "externalIds": Promobot.products_ID_list(n),
                                     "addresses": Promobot.store_addresses_ID_list(n),
-                                    "commissionOnDiscountedPrice":False,
+                                    "commissionOnDiscountedPrice":Promobot.commissionOnDiscountedPrice(n),
                                     "subsidyStrategy":"BY_PERCENTAGE",
                                     "sponsors":[{"sponsorId":1,
                                         "sponsorOrigin":"GLOVO",
-                                        "subsidyValue":Promobot.subsidyValue("glovo", n)},
+                                        "subsidyValue":int(Promobot.subsidyValue("glovo", n))},
                                         {"sponsorId":2,
                                         "sponsorOrigin":"PARTNER",
-                                        "subsidyValue":Promobot.subsidyValue("partner", n)}]}],
+                                        "subsidyValue":int(Promobot.subsidyValue("partner", n))}]}],
                         "customerTagId":None,
-                        "budget":None,
+                        "budget":Promobot.with_budget(n),
                         "prime": Promobot.is_prime(n)}
             p = requests.post(url, headers = {'authorization' : access_token}, json = payload)
             if p.ok is False:
@@ -458,6 +513,13 @@ class Promobot:
                     if confirmation in ['yes','ye','y','si']:
                         pass
                     else:
+                        url = f'https://adminapi.glovoapp.com/admin/partner_promotions/{int(df_promo.at[n,"Promo_ID"])}'
+                        r = requests.delete(url, headers  = {'authorization' : access_token})
+                        if r.ok:
+                            df_promo.at[n,'Status'] = 'deleted'
+                            print(f'Promo {n} - deleted')
+                        else:
+                            print(f'Promo {n} - unable to delete', r.content)
                         Promobot.df_to_excel()
                         sys.exit(0)
 
@@ -480,7 +542,7 @@ class Promobot:
     '''promo check'''
     def checker(n):
         if pd.notna(df_promo.at[n,'Promo_ID']):
-            if type(df_promo.at[n,'Promo_ID']) == 'str':
+            if isinstance(df_promo.at[n,'Promo_ID'],str):
                 df_promo.at[n,'Promo_ID'] = df_promo.at[n,'Promo_ID'].str.strip()
                 #df_promo.at[n,'Promo_ID'] = sub("\D",'',df_promo.at[n,'Promo_ID'])
             url = f"https://adminapi.glovoapp.com/admin/partner_promotions/{int(df_promo.at[n,'Promo_ID'])}"
@@ -528,17 +590,22 @@ class Promobot:
         try:
             for n in df_promo.index[:21]:
                 function(n)
-        except (KeyboardInterrupt, Exception):
+        except (KeyboardInterrupt, Exception) as e:
+            print(repr(e))
+            print('Aborting mission')
             Promobot.df_to_excel()
-        if len(df_promo) > 20:
-            try:
-                ###using multithreading concurrent futures###
-                with ThreadPoolExecutor() as executor:
-                    for n in df_promo.index[21:]:
-                        executor.submit(function, n)
-                ###end multiprocessing process###
-            except (KeyboardInterrupt, Exception):
-                Promobot.df_to_excel()
+        else:
+            if len(df_promo) > 20:
+                try:
+                    ###using multithreading concurrent futures###
+                    with ThreadPoolExecutor() as executor:
+                        for n in df_promo.index[21:]:
+                            executor.submit(function, n)
+                    ###end multiprocessing process###
+                except (KeyboardInterrupt, Exception) as e:
+                    print(repr(e))
+                    print('Aborting mission')
+                    Promobot.df_to_excel()
 
     '''driver'''
     def driver():
@@ -566,3 +633,5 @@ class Promobot:
             k=input('\nPress Enter x2 to close')
         else:
             k=input('\nPress Enter x2 to close')
+
+Promobot.driver()
