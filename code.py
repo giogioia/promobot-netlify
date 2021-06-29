@@ -633,5 +633,3 @@ class Promobot:
             k=input('\nPress Enter x2 to close')
         else:
             k=input('\nPress Enter x2 to close')
-
-Promobot.driver()
