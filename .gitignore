@@ -1,2 +1,6 @@
 .DF_Store
 .DS_Store
+__pycache__/
+get_new_token.py
+my_log.log
+my_personal_token.json
