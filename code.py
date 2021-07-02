@@ -235,7 +235,7 @@ class PromoBot:
             #no_commissionOnDiscountedPrice     
             try:
                 df_promo.loc[:,'Commission_On_Discounted_Price'] = df_promo.loc[:,'Commission_On_Discounted_Price'].str.strip()
-            except KeyError:
+            except (KeyError, AttributeError):
                 no_commissionOnDiscountedPrice = True
             else:
                 if pd.notna(df_promo.loc[:,'Commission_On_Discounted_Price']).sum() == 0:
