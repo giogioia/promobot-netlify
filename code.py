@@ -22,8 +22,11 @@ from subprocess import call
 #from regex import sub
 
 class Promobot:
-    global bot_name, mode, df_promo, output_excel, output_path, platform
+    global bot_name, exe_version_needed, mode, df_promo, output_excel, output_path, platform
     bot_name = 'promobot'
+    exe_version_needed = 1.1
+    def exe_version():    
+        return exe_version_needed
     '''Init functions'''
     #Step 1: set path
     def set_path():
@@ -122,7 +125,7 @@ class Promobot:
 
 
     def print_bot_name():
-        print('\nEl Promobot')
+        print(f'\nEl Promobot {bot_name}')
         print('\nPartners Promotions Automation')
 
     '''''''''''''''''''''''''''''End Init'''''''''''''''''''''''''''''
