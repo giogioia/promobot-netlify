@@ -165,30 +165,12 @@ class PromoBot:
                 if a_or_b == 'a':
                     print('\nSelected mode is "Create Promos"')
                     mode = 'create'
-                    #print(f'Promos will will be Created for the {len(df_promo)} Store IDs found in {input_name}')
-                    #time.sleep(2)
-                    #confirm = input('\nProceed with Promo Creation? [yes/no]\t').strip().lower()
-                    #if confirm in ['yes','ye','y','si']:
-                        #mode = 'create'
-                        #break
                 elif a_or_b == "b":
                     print('\nSelected mode is "Delete Promos"')
                     mode = 'delete'
-                    #print(f'Promos will will be Deleted for the {len(df_promo)} Store IDs found in {input_name}')
-                    #time.sleep(2)
-                    #confirm = input('\nProceed with Promo Deletion? [yes/no]\t').strip().lower()
-                    #if confirm in ['yes','ye','y','si']:
-                        #mode = 'delete'
-                        #break
                 elif a_or_b == "c":
                     print('\nSelected mode is "Promos status check"')
                     mode = 'check'
-                    #print(f'A simple check of current Promo status will be done for the {len(df_promo)} Store IDs found in {input_name}')
-                    #time.sleep(2)
-                    #confirm = input('\nProceed [yes]/[no]:\t').strip().lower()
-                    #if confirm in ["yes","y","ye","si"]:
-                        #mode = 'check'
-                        #break
                 break
 
     #custom function for set_input(): extracts dataframe once input name is set
@@ -221,7 +203,12 @@ class PromoBot:
                 if pd.notna(df_promo.loc[:,'Only_Prime']).sum() == 0:
                     no_prime = True
                 else:
-                    no_prime = False
+                    if df_promo.loc[:,'Only_Prime'].dtype != 'O':
+                        print('Column Only_Prime must have text format.\nCheck input file and try again.')
+                        k=input('\nPress Enter x2 to close')
+                        sys.exit(0)
+                    else: 
+                        no_prime = False
             #Budget
             try:
                 df_promo.loc[:,'Budget']
@@ -234,14 +221,17 @@ class PromoBot:
                     no_budget = False
             #no_commissionOnDiscountedPrice     
             try:
-                df_promo.loc[:,'Commission_On_Discounted_Price'] = df_promo.loc[:,'Commission_On_Discounted_Price'].str.strip()
-            except (KeyError, AttributeError):
+                df_promo.loc[:,'Commission_On_Discounted_Price']
+            except KeyError:
                 no_commissionOnDiscountedPrice = True
             else:
                 if pd.notna(df_promo.loc[:,'Commission_On_Discounted_Price']).sum() == 0:
                     no_commissionOnDiscountedPrice = True
                 else:
-                    no_commissionOnDiscountedPrice = False
+                    if df_promo.loc[:,'Commission_On_Discounted_Price'].dtype != 'O':
+                        raise ValueError('Column Commission_On_Discounted_Price must have text format.\nCheck input file and try again.')
+                    else: 
+                        no_commissionOnDiscountedPrice = False
             #Pructs columns
             try:
                 df_promo.loc[:,list(map(lambda x: 'Product' in x, list(df_promo)))]
@@ -269,11 +259,15 @@ class PromoBot:
             if df_promo.loc[:,"%GLOVO"].dtype == 'O':
                 df_promo.loc[:,"%GLOVO"]= df_promo.loc[:,"%GLOVO"].str.strip('%')
                 df_promo.loc[:,"%GLOVO"].astype('int')
+            #%partner
+            if df_promo.loc[:,"%%PARTNER"].dtype == 'O':
+                df_promo.loc[:,"%%PARTNER"]= df_promo.loc[:,"%%PARTNER"].str.strip('%')
+                df_promo.loc[:,"%%PARTNER"].astype('int')
         elif mode == 'delete':
-            if 'Promo_ID' not in list(df_promo):
+            if ('Promo_ID' not in list(df_promo)) or (pd.notna(df_promo.loc[:,'Promo_ID']).sum() == 0):
                 raise KeyError('Promo_ID')
         elif mode == 'check':
-            if 'Promo_ID' not in list(df_promo):
+            if ('Promo_ID' not in list(df_promo)) or (pd.notna(df_promo.loc[:,'Promo_ID']).sum() == 0):
                 raise KeyError('Promo_ID')
         #print(f'Data succesfully extracted from {os.path.join(os.path.basename(os.path.dirname(input_file)),os.path.basename(input_file))}')
 
@@ -363,13 +357,15 @@ class PromoBot:
 
     def perc(promo_type):
         if PromoBot.p_type(promo_type) == 'PERCENTAGE_DISCOUNT':
-            if type(promo_type) == 'str':
+            if isinstance(promo_type,str):
                 return int((promo_type).strip('%'))
             else:
-                return int(promo_type)
+                if promo_type < 1:
+                    return (promo_type * 100)
+                else:
+                    return promo_type
         else:
             return None
-
 
     def strat(subsidy):
         return f'ASSUMED_BY_{subsidy}'
@@ -444,9 +440,15 @@ class PromoBot:
                 return 100
         elif PromoBot.strat((df_promo.at[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\")']).strip().upper()) == 'ASSUMED_BY_BOTH':
             if subject == 'glovo':
-                return df_promo.at[n,"%GLOVO"]
+                if df_promo.at[n,"%GLOVO"] < 1:
+                    return df_promo.at[n,"%GLOVO"] * 100
+                else:
+                    return df_promo.at[n,"%GLOVO"]
             if subject == 'partner':
-                return df_promo.at[n,"%PARTNER"]
+                if df_promo.at[n,"%PARTNER"] < 1:
+                    return df_promo.at[n,"%PARTNER"] * 100
+                else:
+                    return df_promo.at[n,"%PARTNER"]
 
     def is_prime(n):
         if no_prime:
@@ -538,13 +540,15 @@ class PromoBot:
                     if confirmation in ['yes','ye','y','si']:
                         pass
                     else:
-                        url = f'https://adminapi.glovoapp.com/admin/partner_promotions/{int(df_promo.at[n,"Promo_ID"])}'
-                        r = requests.delete(url, headers  = {'authorization' : access_token})
-                        if r.ok:
-                            df_promo.at[n,'Status'] = 'deleted'
-                            print(f'Promo {n} - deleted')
-                        else:
-                            print(f'Promo {n} - unable to delete', r.content)
+                        delete = input(f'\nDelete promo {n}? [yes/no]')
+                        if delete in ['yes','ye','y','si']:
+                            url = f'https://adminapi.glovoapp.com/admin/partner_promotions/{int(df_promo.at[n,"Promo_ID"])}'
+                            r = requests.delete(url, headers  = {'authorization' : access_token})
+                            if r.ok:
+                                df_promo.at[n,'Status'] = 'deleted'
+                                print(f'Promo {n} - deleted')
+                            else:
+                                print(f'Promo {n} - unable to delete', r.content)
                         PromoBot.df_to_excel()
                         sys.exit(0)
 
