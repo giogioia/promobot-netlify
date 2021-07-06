@@ -260,9 +260,9 @@ class PromoBot:
                 df_promo.loc[:,"%GLOVO"]= df_promo.loc[:,"%GLOVO"].str.strip('%')
                 df_promo.loc[:,"%GLOVO"].astype('int')
             #%partner
-            if df_promo.loc[:,"%%PARTNER"].dtype == 'O':
-                df_promo.loc[:,"%%PARTNER"]= df_promo.loc[:,"%%PARTNER"].str.strip('%')
-                df_promo.loc[:,"%%PARTNER"].astype('int')
+            if df_promo.loc[:,"%PARTNER"].dtype == 'O':
+                df_promo.loc[:,"%PARTNER"]= df_promo.loc[:,"%PARTNER"].str.strip('%')
+                df_promo.loc[:,"%PARTNER"].astype('int')
         elif mode == 'delete':
             if ('Promo_ID' not in list(df_promo)) or (pd.notna(df_promo.loc[:,'Promo_ID']).sum() == 0):
                 raise KeyError('Promo_ID')
