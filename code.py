@@ -361,9 +361,9 @@ class PromoBot:
                 return int((promo_type).strip('%'))
             else:
                 if promo_type < 1:
-                    return (promo_type * 100)
+                    return int(promo_type * 100)
                 else:
-                    return promo_type
+                    return int(promo_type)
         else:
             return None
 
@@ -441,14 +441,14 @@ class PromoBot:
         elif PromoBot.strat((df_promo.at[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\")']).strip().upper()) == 'ASSUMED_BY_BOTH':
             if subject == 'glovo':
                 if df_promo.at[n,"%GLOVO"] < 1:
-                    return df_promo.at[n,"%GLOVO"] * 100
+                    return int(df_promo.at[n,"%GLOVO"] * 100)
                 else:
-                    return df_promo.at[n,"%GLOVO"]
+                    return int(df_promo.at[n,"%GLOVO"])
             if subject == 'partner':
                 if df_promo.at[n,"%PARTNER"] < 1:
-                    return df_promo.at[n,"%PARTNER"] * 100
+                    return int(df_promo.at[n,"%PARTNER"] * 100)
                 else:
-                    return df_promo.at[n,"%PARTNER"]
+                    return int(df_promo.at[n,"%PARTNER"])
 
     def is_prime(n):
         if no_prime:
@@ -662,3 +662,5 @@ class PromoBot:
             k=input('\nPress Enter x2 to close')
         else:
             k=input('\nPress Enter x2 to close')
+
+
