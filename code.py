@@ -316,7 +316,7 @@ class PromoBot:
                     #print(f'Promos will will be Created for the {len(df_promo)} Store IDs found in {input_name}')
                     PromoBot.set_output_dir()
                     sleep(1)
-                    confirm_path = input(f'Using file \'{input_name}\' to {mode} promos of {len(df_promo)} Store IDs found in {os.path.join(os.path.basename(os.path.dirname(input_path)),os.path.basename(input_path))}.\nOutput will be saved in folder \'{os.path.basename(output_path)}\'\nContinue? [yes,no]\t')
+                    confirm_path = input(f'\nUsing file \'{input_name}\' to {mode} promos of {len(df_promo)} Store IDs found in {os.path.join(os.path.basename(os.path.dirname(input_path)),os.path.basename(input_path))}.\nOutput will be saved in folder \'{os.path.basename(output_path)}\'\nContinue? [yes,no]\t')
                     if confirm_path in ["yes","y","ye","si"]:
                         logger.info(f'Using file {input_name} in folder {os.path.basename(os.path.dirname(input_path))}')
                         print('')
@@ -512,7 +512,7 @@ class PromoBot:
                 print(f'Promo {n} NOT CREATED')
                 if n == 0:
                     print(f'Promo {n} - {p.content}')
-                    confirmation = input(f'Continue promo creation? [yes,no]\n')
+                    confirmation = input(f'Continue promo creation? [yes,no]\t')
                     print("\n")
                     if confirmation in ['yes','ye','y','si']:
                         pass
@@ -609,6 +609,7 @@ class PromoBot:
         except Exception: pass
         #save output
         df_promo.to_excel(output_excel, index = False)
+        print('\nOutput Excel saved')
         #with pd.ExcelWriter(output_excel) as writer:
             #df_promo.to_excel(writer, sheet_name = 'Promos', index=False)
             #writer.sheets['Promos'].set_default_row(20)
@@ -616,25 +617,24 @@ class PromoBot:
 
     '''launcher'''
     def launch(function):
-        try:
-            for n in df_promo.index[:21]:
+        for n in df_promo.index[:21]:
+            try:
                 function(n)
-        except (KeyboardInterrupt, Exception) as e:
-            print(repr(e))
-            print('Aborting mission')
-            PromoBot.df_to_excel()
-        else:
-            if len(df_promo) > 20:
-                try:
-                    ###using multithreading concurrent futures###
-                    with ThreadPoolExecutor() as executor:
-                        for n in df_promo.index[21:]:
-                            executor.submit(function, n)
-                    ###end multiprocessing process###
-                except (KeyboardInterrupt, Exception) as e:
-                    print(repr(e))
-                    print('Aborting mission')
-                    PromoBot.df_to_excel()
+            except Exception as e:
+                print(f'Problem with data of promo {n} - unable to process')
+                print(repr(e))
+                pass
+        if len(df_promo) > 20:
+            ###using multithreading concurrent futures###
+            with ThreadPoolExecutor() as executor:
+                for n in df_promo.index[21:]:
+                    try:
+                        executor.submit(function, n)
+                    except Exception as e:
+                        print(f'Problem with data of promo {n} - unable to process')
+                        print(repr(e))
+                        pass
+            ###end multiprocessing process###
 
     '''driver'''
     def driver():
@@ -657,10 +657,11 @@ class PromoBot:
                 PromoBot.launch(PromoBot.checker)
             PromoBot.df_to_excel()
             print(f'\n\n{bot_name} has processed {len(df_promo)} Store Addresses\n\nResults are available in file {os.path.relpath(output_excel)}')
-        except Exception as e:
+            k=input('\n\nPress Enter x2 to close')
+        except (KeyboardInterrupt, Exception) as e:
             print(repr(e))
-            k=input('\nPress Enter x2 to close')
-        else:
+            try: PromoBot.df_to_excel()
+            except Exception: print('Unable to save output data')
             k=input('\nPress Enter x2 to close')
 
-
+PromoBot.driver()
