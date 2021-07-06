@@ -664,4 +664,3 @@ class PromoBot:
             except Exception: print('Unable to save output data')
             k=input('\nPress Enter x2 to close')
 
-PromoBot.driver()
