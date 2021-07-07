@@ -183,8 +183,8 @@ class PromoBot:
         #reset index after deleting empty rows
         df_promo.reset_index(drop = True, inplace = True)
         #check if Status column in present
-        try: df_promo['Status']
-        except KeyError: df_promo.loc[:,'Status']= None
+        if 'Status' not in list(df_promo):
+            df_promo.loc[:,'Status']= None
         if mode == 'create':
             #clean str columns
             try:
@@ -395,12 +395,12 @@ class PromoBot:
             prods_list = []
             for i in range(1,10):
                 try:
-                    df_promo.at[n,f'Product_ID{i}']
+                    df_promo.loc[n,f'Product_ID{i}']
                 except KeyError:
                     break
                 else:
-                    if pd.isna(df_promo.at[n,f'Product_ID{i}']): continue
-                    prods_list.append((str(df_promo.at[n,f'Product_ID{i}'])).replace('\ufeff', ''))
+                    if pd.isna(df_promo.loc[n,f'Product_ID{i}']): continue
+                    prods_list.append((str(df_promo.loc[n,f'Product_ID{i}'])).replace('\ufeff', ''))
             if prods_list == []:
                 return None
             else:
@@ -413,48 +413,48 @@ class PromoBot:
             sa_ID_list = []
             for o in range(1,10):
                 try:
-                    df_promo.at[n,f'Store_Address{o}']
+                    df_promo.loc[n,f'Store_Address{o}']
                 except KeyError:
                     break
                 else:
-                    if pd.isna(df_promo.at[n,f'Store_Address{o}']): continue
-                    if type(df_promo.at[n,f'Store_Address{o}']) == str:
-                        df_promo.at[n,f'Store_Address{o}'] = df_promo.at[n,f'Store_Address{o}'].replace('\ufeff', '')
+                    if pd.isna(df_promo.loc[n,f'Store_Address{o}']): continue
+                    if type(df_promo.loc[n,f'Store_Address{o}']) == str:
+                        df_promo.loc[n,f'Store_Address{o}'] = df_promo.loc[n,f'Store_Address{o}'].replace('\ufeff', '')
 
-                    sa_ID_list.append(int(df_promo.at[n,f'Store_Address{o}']))
+                    sa_ID_list.append(int(df_promo.loc[n,f'Store_Address{o}']))
             if sa_ID_list == []:
                 return None
             else:
                 return sa_ID_list
 
     def subsidyValue(subject, n):
-        if PromoBot.strat((df_promo.at[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\")']).strip().upper()) == 'ASSUMED_BY_GLOVO':
+        if PromoBot.strat((df_promo.loc[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\")']).strip().upper()) == 'ASSUMED_BY_GLOVO':
                 if subject == 'glovo':
                     return 100
                 if subject == 'partner':
                     return 0
-        elif PromoBot.strat((df_promo.at[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\")']).strip().upper()) == 'ASSUMED_BY_PARTNER':
+        elif PromoBot.strat((df_promo.loc[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\")']).strip().upper()) == 'ASSUMED_BY_PARTNER':
             if subject == 'glovo':
                 return 0
             if subject == 'partner':
                 return 100
-        elif PromoBot.strat((df_promo.at[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\")']).strip().upper()) == 'ASSUMED_BY_BOTH':
+        elif PromoBot.strat((df_promo.loc[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\")']).strip().upper()) == 'ASSUMED_BY_BOTH':
             if subject == 'glovo':
-                if df_promo.at[n,"%GLOVO"] < 1:
-                    return int(df_promo.at[n,"%GLOVO"] * 100)
+                if df_promo.loc[n,"%GLOVO"] < 1:
+                    return int(df_promo.loc[n,"%GLOVO"] * 100)
                 else:
-                    return int(df_promo.at[n,"%GLOVO"])
+                    return int(df_promo.loc[n,"%GLOVO"])
             if subject == 'partner':
-                if df_promo.at[n,"%PARTNER"] < 1:
-                    return int(df_promo.at[n,"%PARTNER"] * 100)
+                if df_promo.loc[n,"%PARTNER"] < 1:
+                    return int(df_promo.loc[n,"%PARTNER"] * 100)
                 else:
-                    return int(df_promo.at[n,"%PARTNER"])
+                    return int(df_promo.loc[n,"%PARTNER"])
 
     def is_prime(n):
         if no_prime:
             return None
         else:
-            if df_promo.at[n,'Only_Prime'] == 'yes':
+            if df_promo.loc[n,'Only_Prime'] == 'yes':
                 return True
             else:
                 return False
@@ -464,36 +464,36 @@ class PromoBot:
             return None
         else:
             try:
-                int(df_promo.at[n,'Budget'])
+                int(df_promo.loc[n,'Budget'])
             except ValueError:
                 return None
             else:
-                return int(df_promo.at[n,'Budget'])
+                return int(df_promo.loc[n,'Budget'])
     
     def commissionOnDiscountedPrice(n):
         if no_commissionOnDiscountedPrice:
             return None
         else:
-            if df_promo.at[n,'Commission_On_Discounted_Price'] == 'yes':
+            if df_promo.loc[n,'Commission_On_Discounted_Price'] == 'yes':
                 return True
             else:
                 return False
                 
     def creation(n):
-        if df_promo.at[n,'Status'] == 'created':
+        if df_promo.loc[n,'Status'] == 'created':
             print(n,'already created')
         else:
             url = 'https://adminapi.glovoapp.com/admin/partner_promotions'
-            payload = {"name": df_promo.at[n,'Promo_Name'],
-                        "cityCode": df_promo.at[n,'City_Code'],
-                        "type": PromoBot.p_type(df_promo.at[n,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")']),
-                        "percentage": PromoBot.perc(df_promo.at[n,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")']),
-                        "deliveryFeeCents": PromoBot.del_fee(df_promo.at[n,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")']),
-                        "startDate": PromoBot.time_code('start',df_promo.at[n,"Start_Date (dd/mm/yyyy)"]),
-                        "endDate": PromoBot.time_code('end',df_promo.at[n,"End_Date (included)"]),
+            payload = {"name": df_promo.loc[n,'Promo_Name'],
+                        "cityCode": df_promo.loc[n,'City_Code'],
+                        "type": PromoBot.p_type(df_promo.loc[n,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")']),
+                        "percentage": PromoBot.perc(df_promo.loc[n,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")']),
+                        "deliveryFeeCents": PromoBot.del_fee(df_promo.loc[n,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")']),
+                        "startDate": PromoBot.time_code('start',df_promo.loc[n,"Start_Date (dd/mm/yyyy)"]),
+                        "endDate": PromoBot.time_code('end',df_promo.loc[n,"End_Date (included)"]),
                         "openingTimes": None,
-                        "partners":[{"id": int(df_promo.at[n,'Store_ID']),
-                                    "paymentStrategy": PromoBot.paymentStrat((df_promo.at[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\")']).strip().upper()),
+                        "partners":[{"id": int(df_promo.loc[n,'Store_ID']),
+                                    "paymentStrategy": PromoBot.paymentStrat((df_promo.loc[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\")']).strip().upper()),
                                     "externalIds": PromoBot.products_ID_list(n),
                                     "addresses": PromoBot.store_addresses_ID_list(n),
                                     "commissionOnDiscountedPrice":PromoBot.commissionOnDiscountedPrice(n),
@@ -520,32 +520,31 @@ class PromoBot:
                         PromoBot.df_to_excel()
                         sys.exit(0)
                 try:
-                    df_promo.at[n,'Status'] = f"ERROR: {p.json()['error']['message']}"
+                    df_promo.loc[n,'Status'] = f"ERROR: {p.json()['error']['message']}"
                 except Exception:
-                    df_promo.at[n,'Status'] = f"ERROR: {p.content}"
+                    df_promo.loc[n,'Status'] = f"ERROR: {p.content}"
                     if 'Bad request' in str(p.content):
                         print(f'Promo {n} - status: NOT CREATED - INVALID INPUT DATA OR INACTIVE STORE ID')
-                else: df_promo.at[n,'Status'] = f"ERROR: {p.json()['error']['message']}"
+                else: df_promo.loc[n,'Status'] = f"ERROR: {p.json()['error']['message']}"
                 finally:
                     print(f'ERROR: {p.text}')
             else:
-                df_promo.at[n,'Promo_ID'] = int(p.json()['id'])
-                df_promo.at[n,'Status'] = 'created'
+                df_promo.loc[n,'Promo_ID'] = int(p.json()['id'])
+                df_promo.loc[n,'Status'] = 'created'
                 print(f'Promo {n} - status: created; id: {p.json()["id"]}')
                 if n == 0:
                     print(f'\nPromo link: https://beta-admin.glovoapp.com/promotions/{p.json()["id"]}')
                     print('Check if promo has been created as expected')
                     confirmation = input(f'Continue promo creation ({len(df_promo)-1} promos left)? [yes,no]\n')
-                    print("\n")
                     if confirmation in ['yes','ye','y','si']:
                         pass
                     else:
-                        delete = input(f'\nDelete promo {n}? [yes/no]')
+                        delete = input(f'\nDelete promo {n}? [yes/no]\t')
                         if delete in ['yes','ye','y','si']:
-                            url = f'https://adminapi.glovoapp.com/admin/partner_promotions/{int(df_promo.at[n,"Promo_ID"])}'
+                            url = f'https://adminapi.glovoapp.com/admin/partner_promotions/{int(df_promo.loc[n,"Promo_ID"])}'
                             r = requests.delete(url, headers  = {'authorization' : access_token})
                             if r.ok:
-                                df_promo.at[n,'Status'] = 'deleted'
+                                df_promo.loc[n,'Status'] = 'deleted'
                                 print(f'Promo {n} - deleted')
                             else:
                                 print(f'Promo {n} - unable to delete', r.content)
@@ -554,14 +553,14 @@ class PromoBot:
 
     '''promo deletion'''
     def deletion(n):
-        if pd.notna(df_promo.at[n,'Promo_ID']):
-            if df_promo.at[n,'Status'] == 'deleted':
+        if pd.notna(df_promo.loc[n,'Promo_ID']):
+            if df_promo.loc[n,'Status'] == 'deleted':
                 print(n,'already deleted')
             else:
-                url = f'https://adminapi.glovoapp.com/admin/partner_promotions/{int(df_promo.at[n,"Promo_ID"])}'
+                url = f'https://adminapi.glovoapp.com/admin/partner_promotions/{int(df_promo.loc[n,"Promo_ID"])}'
                 r = requests.delete(url, headers  = {'authorization' : access_token})
                 if r.ok:
-                    df_promo.at[n,'Status'] = 'deleted'
+                    df_promo.loc[n,'Status'] = 'deleted'
                     print(f'Promo {n} - deleted')
                 else:
                     print(f'Promo {n} - unable to delete', r.content)
@@ -570,32 +569,32 @@ class PromoBot:
 
     '''promo check'''
     def checker(n):
-        if pd.notna(df_promo.at[n,'Promo_ID']):
-            if isinstance(df_promo.at[n,'Promo_ID'],str):
-                df_promo.at[n,'Promo_ID'] = df_promo.at[n,'Promo_ID'].str.strip()
-                #df_promo.at[n,'Promo_ID'] = sub("\D",'',df_promo.at[n,'Promo_ID'])
-            url = f"https://adminapi.glovoapp.com/admin/partner_promotions/{int(df_promo.at[n,'Promo_ID'])}"
+        if pd.notna(df_promo.loc[n,'Promo_ID']):
+            if isinstance(df_promo.loc[n,'Promo_ID'],str):
+                df_promo.loc[n,'Promo_ID'] = df_promo.loc[n,'Promo_ID'].str.strip()
+                #df_promo.loc[n,'Promo_ID'] = sub("\D",'',df_promo.loc[n,'Promo_ID'])
+            url = f"https://adminapi.glovoapp.com/admin/partner_promotions/{int(df_promo.loc[n,'Promo_ID'])}"
             p = requests.get(url, headers = {'authorization' : access_token})
             if p.ok is False:
                 try:
                     p.json()['error']['message']
                 except Exception:
-                    df_promo.at[n,'Status'] = p.text
+                    df_promo.loc[n,'Status'] = p.text
                     print(p.text)
                 else:
                     if 'deleted' in p.json()['error']['message']:
-                        df_promo.at[n,'Status'] = 'deleted'
+                        df_promo.loc[n,'Status'] = 'deleted'
                         print(f'Promo {n} - status deleted')
                     else:
-                        df_promo.at[n,'Status'] = p.json()['error']['message']
+                        df_promo.loc[n,'Status'] = p.json()['error']['message']
                         print(p.json()['error']['message'])
 
             else:
                 if p.json()['deleted'] == True:
-                    df_promo.at[n,'Status'] = 'deleted'
+                    df_promo.loc[n,'Status'] = 'deleted'
                     print(f'Promo {n} - status deleted')
                 else:
-                    df_promo.at[n,'Status'] = 'active'
+                    df_promo.loc[n,'Status'] = 'active'
                     print(f'Promo {n} - status active')
         else:
             print(f'Promo {n} - No promo ID to check')
@@ -663,4 +662,4 @@ class PromoBot:
             try: PromoBot.df_to_excel()
             except Exception: print('Unable to save output data')
             k=input('\nPress Enter x2 to close')
-
+PromoBot.driver()
