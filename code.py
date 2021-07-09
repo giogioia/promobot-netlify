@@ -195,24 +195,20 @@ class PromoBot:
                 df_promo.loc[:,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")'] = df_promo.loc[:,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")'].str.strip()
             except AttributeError:pass
             #Only Prime
-            try:
-                df_promo.loc[:,'Only_Prime'] = df_promo.loc[:,'Only_Prime'].str.strip()
-            except KeyError:
+            if 'Only_Prime' not in list(df_promo):
                 no_prime = True
             else:
                 if pd.notna(df_promo.loc[:,'Only_Prime']).sum() == 0:
                     no_prime = True
                 else:
                     if df_promo.loc[:,'Only_Prime'].dtype != 'O':
-                        print('Column Only_Prime must have text format.\nCheck input file and try again.')
-                        k=input('\nPress Enter x2 to close')
-                        sys.exit(0)
+                        print('\nColumn Only_Prime must have text format.\nCheck input file and try again.')
+                        raise AttributeError
                     else: 
                         no_prime = False
+                        df_promo.loc[:,'Only_Prime'] = df_promo.loc[:,'Only_Prime'].str.strip()
             #Budget
-            try:
-                df_promo.loc[:,'Budget']
-            except KeyError:
+            if 'Budget' not in list(df_promo):
                 no_budget = True
             else:
                 if pd.notna(df_promo.loc[:,'Budget']).sum() == 0:
@@ -220,9 +216,7 @@ class PromoBot:
                 else:
                     no_budget = False
             #no_commissionOnDiscountedPrice     
-            try:
-                df_promo.loc[:,'Commission_On_Discounted_Price']
-            except KeyError:
+            if 'Commission_On_Discounted_Price' not in list(df_promo):
                 no_commissionOnDiscountedPrice = True
             else:
                 if pd.notna(df_promo.loc[:,'Commission_On_Discounted_Price']).sum() == 0:
@@ -233,9 +227,7 @@ class PromoBot:
                     else: 
                         no_commissionOnDiscountedPrice = False
             #Pructs columns
-            try:
-                df_promo.loc[:,list(map(lambda x: 'Product' in x, list(df_promo)))]
-            except KeyError:
+            if any(list(map(lambda x: 'Product' in x, list(df_promo)))) == False:
                 no_products = True
             else:
                 if pd.notna(df_promo.loc[:,list(map(lambda x: 'Product' in x, list(df_promo)))]).sum().sum() ==  0:
@@ -243,9 +235,7 @@ class PromoBot:
                 else:
                     no_products = False
             #Store_Address columns
-            try:
-                df_promo.loc[:,list(map(lambda x: 'Store_Address' in x, list(df_promo)))]
-            except KeyError:
+            if any(list(map(lambda x: 'Store_Address' in x, list(df_promo)))) == False:
                 no_store_address = True
             else:
                 if pd.notna(df_promo.loc[:,list(map(lambda x: 'Store_Address' in x, list(df_promo)))]).sum().sum() ==  0:
