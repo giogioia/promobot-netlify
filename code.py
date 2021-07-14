@@ -15,8 +15,9 @@ import logging
 import sys
 import os
 import get_new_token
+import datetime as dt
 from datetime import datetime, timedelta
-from time import sleep
+from time import sleep, time
 from concurrent.futures import ThreadPoolExecutor
 from subprocess import call
 #from regex import sub
@@ -366,16 +367,19 @@ class PromoBot:
         elif PromoBot.strat(subsidy) == "ASSUMED_BY_BOTH":
             return "ASSUMED_BY_PARTNER"
 
+    def get_utc_timestamp(local_time):
+        return (local_time - datetime(1970, 1, 1)).total_seconds()
+
     def time_code(x, date):
         if x == 'start':
-            hours_added = timedelta(hours = 1)
+            hours_added = timedelta(hours = 5)
             future_date = date + hours_added
-            stamp = datetime.timestamp(future_date)
+            stamp = PromoBot.get_utc_timestamp(future_date)
             return int(stamp*1000)
         if x == 'end':
             hours_added = timedelta(hours = 25)
             future_date = date + hours_added
-            stamp = datetime.timestamp(future_date)
+            stamp = PromoBot.get_utc_timestamp(future_date)
             return int(stamp*1000)
 
     def products_ID_list(n):
