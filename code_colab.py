@@ -20,6 +20,7 @@ from datetime import datetime, timedelta
 from time import sleep, time
 from concurrent.futures import ThreadPoolExecutor
 from subprocess import call
+import base64
 #from regex import sub
 
 class PromoBot:
@@ -64,7 +65,7 @@ class PromoBot:
         global content
         global glovo_email, refresh_token, country
         with open(token_path) as read_file:
-            content = json.load(read_file)
+            content = base64.b64encode(json.load(read_file).encode("utf-32"))
         glovo_email = content['glovo_email']
         refresh_token = content['refresh_token']
         country = content['country']
