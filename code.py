@@ -55,22 +55,6 @@ class PromoBot:
     def set_path():
         global cwd, token_path, input_path, platform
         cwd = os.getcwd()
-        '''
-        #if sys has attribute _MEIPASS then script launched by bundled exe.
-        if getattr(sys, '_MEIPASS', False):
-            cwd = os.path.dirname(os.path.dirname(sys._MEIPASS))
-        else:
-            cwd = os.getcwd()
-        else:
-            if "SPY_PYTHONPATH" in os.environ:
-                cwd = os.getcwd()
-            else:
-                cwd = os.path.dirname(sys.path[0])
-        print('cwd',cwd)
-        print('sys._MEIPASS',sys._MEIPASS)
-        print('sys.path[0]',sys.path[0])
-        print('os.getcwd()',os.getcwd())
-        '''
         token_path = os.path.join(cwd,'my_personal_token.json')
         if os.name == 'nt':
             platform = 'windows'
@@ -100,12 +84,20 @@ class PromoBot:
     def read_json():
         global content
         global glovo_email, refresh_token, country
+        #without encryption
         with open(token_path) as read_file:
             content = json.load(read_file)
         glovo_email = content['glovo_email']
         refresh_token = content['refresh_token']
         country = content['country']
-
+        # #with encryption
+        # with open(token_path, 'rb') as read_file:
+        #     enc_content = read_file.read()
+        # dec_content = base64.b64decode(enc_content).decode("utf-32")
+        # content = json.loads(dec_content)
+        # glovo_email = content['glovo_email']
+        # refresh_token = content['refresh_token']
+        # country = content['country']
     #Step 3: check login credentials
     def login_check():
         #Check/get login data: check if file 'my personal token' exists and read it to get login data.
@@ -138,9 +130,15 @@ class PromoBot:
             #print("Token refreshed")
             logger.info('Access Token Refreshed')
             #saving new refresh token
+            #without enc
             content['refresh_token'] = new_refresh_token
             with open(token_path, "r+") as dst_file:
                 json.dump(content, dst_file)
+            # #with enc
+            # content['refresh_token'] = new_refresh_token
+            # json_data = json.dumps(content)  
+            # with open(token_path, "wb") as dst_file:
+            #     dst_file.write(base64.b64encode(str(json_data).encode("utf-32")))
             #print("token refreshed")
         else:
             print(f"Token NOT refreshed -> {oauth_request.content}")
@@ -192,9 +190,9 @@ class PromoBot:
                 df_promo.loc[:,'City_Code'] = df_promo.loc[:,'City_Code'].str.strip()
                 df_promo.loc[:,'Promo_Name'] = df_promo.loc[:,'Promo_Name'].str.strip()
             except AttributeError:pass
-            try:
-                df_promo.loc[:,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")'] = df_promo.loc[:,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")'].str.strip()
-            except AttributeError:pass
+            # try:
+            #     df_promo.loc[:,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")'] = df_promo.loc[:,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")'].str.strip()
+            # except AttributeError:pass
             #Only Prime
             if 'Only_Prime' not in list(df_promo):
                 no_prime = True
@@ -364,8 +362,27 @@ class PromoBot:
     def paymentStrat(subsidy):
         if PromoBot.strat(subsidy) == "ASSUMED_BY_GLOVO" or PromoBot.strat(subsidy) == "ASSUMED_BY_PARTNER":
             return PromoBot.strat(subsidy)
-        elif PromoBot.strat(subsidy) == "ASSUMED_BY_BOTH":
+        else: 
             return "ASSUMED_BY_PARTNER"
+
+    def sponsors(subsidy, n):
+        if PromoBot.strat(subsidy) == "ASSUMED_BY_GLOVO":
+            return [{"sponsorId":1,
+                    "sponsorOrigin":"GLOVO",
+                    "subsidyValue": 100}]
+                    #"subsidyValue":int(PromoBot.subsidyValue("glovo", n))}]
+        if PromoBot.strat(subsidy) == "ASSUMED_BY_PARTNER":
+            return [{"sponsorId":2,
+                    "sponsorOrigin":"PARTNER",
+                    "subsidyValue": 100}]
+                    #"subsidyValue":int(PromoBot.subsidyValue("partner", n))}]
+        if PromoBot.strat(subsidy) == "ASSUMED_BY_BOTH":
+            return [{"sponsorId":1,
+                    "sponsorOrigin":"GLOVO",
+                    "subsidyValue":int(PromoBot.subsidyValue("glovo", n))},
+                    {"sponsorId":2,
+                    "sponsorOrigin":"PARTNER",
+                    "subsidyValue":int(PromoBot.subsidyValue("partner", n))}]
 
     def get_utc_timestamp(local_time):
         return (local_time - datetime(1970, 1, 1)).total_seconds()
@@ -472,7 +489,7 @@ class PromoBot:
                 return True
             else:
                 return False
-                
+  
     def creation(n):
         if df_promo.loc[n,'Status'] == 'created':
             print(n,'already created')
@@ -492,12 +509,13 @@ class PromoBot:
                                     "addresses": PromoBot.store_addresses_ID_list(n),
                                     "commissionOnDiscountedPrice":PromoBot.commissionOnDiscountedPrice(n),
                                     "subsidyStrategy":"BY_PERCENTAGE",
-                                    "sponsors":[{"sponsorId":1,
-                                        "sponsorOrigin":"GLOVO",
-                                        "subsidyValue":int(PromoBot.subsidyValue("glovo", n))},
-                                        {"sponsorId":2,
-                                        "sponsorOrigin":"PARTNER",
-                                        "subsidyValue":int(PromoBot.subsidyValue("partner", n))}]}],
+                                    "sponsors":PromoBot.sponsors((df_promo.loc[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\")']).strip().upper(), n)}],
+                                    # "sponsors":[{"sponsorId":1,
+                                    #     "sponsorOrigin":"GLOVO",
+                                    #     "subsidyValue":int(PromoBot.subsidyValue("glovo", n))},
+                                    #     {"sponsorId":2,
+                                    #     "sponsorOrigin":"PARTNER",
+                                    #     "subsidyValue":int(PromoBot.subsidyValue("partner", n))}]}],
                         "customerTagId":None,
                         "budget":PromoBot.with_budget(n),
                         "prime": PromoBot.is_prime(n)}
