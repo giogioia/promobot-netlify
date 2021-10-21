@@ -14,13 +14,14 @@ import requests
 import logging
 import sys
 import os
-import get_new_token
 import datetime as dt
 from datetime import datetime, timedelta
 from time import sleep, time
 from concurrent.futures import ThreadPoolExecutor
 from subprocess import call
 import base64
+from importlib.machinery import SourceFileLoader
+get_new_token = SourceFileLoader("get_new_token.py", '/content/drive/Shareddrives/PromoBot/libraries/get_new_token.py').load_module()
 #from regex import sub
 
 class PromoBot:
@@ -64,8 +65,10 @@ class PromoBot:
     def read_json():
         global content
         global glovo_email, refresh_token, country
-        with open(token_path) as read_file:
-            content = base64.b64encode(json.load(read_file).encode("utf-32"))
+        with open(token_path, 'rb') as read_file:
+            enc_content = read_file.read()
+        dec_content = base64.b64decode(enc_content).decode("utf-32")
+        content = json.loads(dec_content)
         glovo_email = content['glovo_email']
         refresh_token = content['refresh_token']
         country = content['country']
@@ -103,9 +106,9 @@ class PromoBot:
             logger.info('Access Token Refreshed')
             #saving new refresh token
             content['refresh_token'] = new_refresh_token
-            with open(token_path, "r+") as dst_file:
-                json.dump(content, dst_file)
-            #print("token refreshed")
+            json_data = json.dumps(content)  
+            with open(token_path, "wb") as dst_file:
+                dst_file.write(base64.b64encode(str(json_data).encode("utf-32")))
         else:
             print(f"Token NOT refreshed -> {oauth_request.content}")
             logger.info(f'Access Token NOT Refreshed -> {oauth_request.content}')
@@ -156,9 +159,9 @@ class PromoBot:
                 df_promo.loc[:,'City_Code'] = df_promo.loc[:,'City_Code'].str.strip()
                 df_promo.loc[:,'Promo_Name'] = df_promo.loc[:,'Promo_Name'].str.strip()
             except AttributeError:pass
-            try:
-                df_promo.loc[:,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")'] = df_promo.loc[:,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")'].str.strip()
-            except AttributeError:pass
+            #try:
+                #df_promo.loc[:,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")'] = df_promo.loc[:,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")'].str.strip()
+            #except AttributeError:pass
             #Only Prime
             if 'Only_Prime' not in list(df_promo):
                 no_prime = True
@@ -328,8 +331,27 @@ class PromoBot:
     def paymentStrat(subsidy):
         if PromoBot.strat(subsidy) == "ASSUMED_BY_GLOVO" or PromoBot.strat(subsidy) == "ASSUMED_BY_PARTNER":
             return PromoBot.strat(subsidy)
-        elif PromoBot.strat(subsidy) == "ASSUMED_BY_BOTH":
+        else:
             return "ASSUMED_BY_PARTNER"
+
+    def sponsors(subsidy, n):
+        if PromoBot.strat(subsidy) == "ASSUMED_BY_GLOVO":
+            return [{"sponsorId":1,
+                    "sponsorOrigin":"GLOVO",
+                    "subsidyValue": 100}]
+                    #"subsidyValue":int(PromoBot.subsidyValue("glovo", n))}]
+        if PromoBot.strat(subsidy) == "ASSUMED_BY_PARTNER":
+            return [{"sponsorId":2,
+                    "sponsorOrigin":"PARTNER",
+                    "subsidyValue": 100}]
+                    #"subsidyValue":int(PromoBot.subsidyValue("partner", n))}]
+        if PromoBot.strat(subsidy) == "ASSUMED_BY_BOTH":
+            return [{"sponsorId":1,
+                    "sponsorOrigin":"GLOVO",
+                    "subsidyValue":int(PromoBot.subsidyValue("glovo", n))},
+                    {"sponsorId":2,
+                    "sponsorOrigin":"PARTNER",
+                    "subsidyValue":int(PromoBot.subsidyValue("partner", n))}]
 
     def get_utc_timestamp(local_time):
         return (local_time - datetime(1970, 1, 1)).total_seconds()
@@ -456,12 +478,7 @@ class PromoBot:
                                     "addresses": PromoBot.store_addresses_ID_list(n),
                                     "commissionOnDiscountedPrice":PromoBot.commissionOnDiscountedPrice(n),
                                     "subsidyStrategy":"BY_PERCENTAGE",
-                                    "sponsors":[{"sponsorId":1,
-                                        "sponsorOrigin":"GLOVO",
-                                        "subsidyValue":int(PromoBot.subsidyValue("glovo", n))},
-                                        {"sponsorId":2,
-                                        "sponsorOrigin":"PARTNER",
-                                        "subsidyValue":int(PromoBot.subsidyValue("partner", n))}]}],
+                                    "sponsors":PromoBot.sponsors((df_promo.loc[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\")']).strip().upper(), n)}],
                         "customerTagId":None,
                         "budget":PromoBot.with_budget(n),
                         "prime": PromoBot.is_prime(n)}
