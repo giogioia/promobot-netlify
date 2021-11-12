@@ -416,7 +416,7 @@ class PromoBot:
                         continue
                     else: 
                         if PromoBot.is_number(df_promo.loc[n,f'Product_ID{i}']):
-                            prods_list.append((str(int(df_promo.loc[n,f'Product_ID{i}']))).replace('\ufeff', ''))
+                            prods_list.append((str(df_promo.loc[n,f'Product_ID{i}'])).replace('\ufeff', ''))
                         else: 
                             prods_list.append((str(df_promo.loc[n,f'Product_ID{i}'])).replace('\ufeff', ''))
             if prods_list == []:
