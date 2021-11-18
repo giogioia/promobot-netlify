@@ -178,7 +178,7 @@ class PromoBot:
     def import_data(input_file):
         global df_promo, no_prime, no_products, no_store_address, no_budget, no_commissionOnDiscountedPrice
         #import data
-        df_promo = pd.read_excel(input_file, usecols=lambda x: 'Unnamed' not in x, engine='openpyxl')
+        df_promo = pd.read_excel(input_file, usecols=lambda x: 'Unnamed' not in x, engine='openpyxl', dtype=object)
         #clean empty rows
         df_promo.dropna(how='all', inplace = True)
         #reset index after deleting empty rows
@@ -248,12 +248,14 @@ class PromoBot:
             df_promo.loc[:,"End_Date (included)"] = pd.to_datetime(df_promo.loc[:,"End_Date (included)"],dayfirst=True)
             #%glovo
             if df_promo.loc[:,"%GLOVO"].dtype == 'O':
-                df_promo.loc[:,"%GLOVO"]= df_promo.loc[:,"%GLOVO"].str.strip('%')
-                df_promo.loc[:,"%GLOVO"].astype('int')
+                try: df_promo.loc[:,"%GLOVO"]= df_promo.loc[:,"%GLOVO"].str.strip('%')
+                except AttributeError: pass
+                else: df_promo.loc[:,"%GLOVO"].astype('int')
             #%partner
             if df_promo.loc[:,"%PARTNER"].dtype == 'O':
-                df_promo.loc[:,"%PARTNER"]= df_promo.loc[:,"%PARTNER"].str.strip('%')
-                df_promo.loc[:,"%PARTNER"].astype('int')
+                try: df_promo.loc[:,"%PARTNER"]= df_promo.loc[:,"%PARTNER"].str.strip('%')
+                except AttributeError: pass
+                else: df_promo.loc[:,"%PARTNER"].astype('int')
         elif mode == 'delete':
             if ('Promo_ID' not in list(df_promo)) or (pd.notna(df_promo.loc[:,'Promo_ID']).sum() == 0):
                 raise KeyError('Promo_ID')
@@ -680,3 +682,4 @@ class PromoBot:
             try: PromoBot.df_to_excel()
             except Exception: print('Unable to save output data')
             k=input('\nPress Enter x2 to close')
+            
