@@ -6,7 +6,7 @@
 Partner Promotions Automation Bot
 Glovo Italy
 
-version: 1.3
+version: 1.4
 
 """
 
@@ -250,12 +250,16 @@ class PromoBot:
             if df_promo.loc[:,"%GLOVO"].dtype == 'O':
                 try: df_promo.loc[:,"%GLOVO"]= df_promo.loc[:,"%GLOVO"].str.strip('%')
                 except AttributeError: pass
-                else: df_promo.loc[:,"%GLOVO"].astype('int')
+                else: 
+                    try: df_promo.loc[:,"%GLOVO"].astype('int')
+                    except ValueError: pass
             #%partner
             if df_promo.loc[:,"%PARTNER"].dtype == 'O':
                 try: df_promo.loc[:,"%PARTNER"]= df_promo.loc[:,"%PARTNER"].str.strip('%')
                 except AttributeError: pass
-                else: df_promo.loc[:,"%PARTNER"].astype('int')
+                else: 
+                    try: df_promo.loc[:,"%PARTNER"].astype('int')
+                    except ValueError: pass
         elif mode == 'delete':
             if ('Promo_ID' not in list(df_promo)) or (pd.notna(df_promo.loc[:,'Promo_ID']).sum() == 0):
                 raise KeyError('Promo_ID')
