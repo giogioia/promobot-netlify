@@ -368,7 +368,7 @@ class PromoBot:
         return f'ASSUMED_BY_{subsidy}'
 
     def paymentStrat(subsidy):
-        if PromoBot.strat(subsidy) == "ASSUMED_BY_GLOVO" or PromoBot.strat(subsidy) == "ASSUMED_BY_PARTNER" or PromoBot.strat(subsidy) == "THIRD_PARTY":
+        if PromoBot.strat(subsidy) == "ASSUMED_BY_GLOVO" or PromoBot.strat(subsidy) == "ASSUMED_BY_PARTNER" or PromoBot.strat(subsidy) == "ASSUMED_BY_THIRD_PARTY":
             return PromoBot.strat(subsidy)
         else: 
             return "ASSUMED_BY_PARTNER"
@@ -384,7 +384,7 @@ class PromoBot:
                     "sponsorOrigin":"PARTNER",
                     "subsidyValue": 100}]
                     #"subsidyValue":int(PromoBot.subsidyValue("partner", n))}]
-        if PromoBot.strat(subsidy) == "THIRD_PARTY":
+        if PromoBot.strat(subsidy) == "ASSUMED_BY_THIRD_PARTY":
             return [{"sponsorId":3,
                     "sponsorOrigin":"THIRD_PARTY",
                     "subsidyValue": 100}]
@@ -466,7 +466,7 @@ class PromoBot:
                 return 0
             if subject == 'partner':
                 return 100
-        elif PromoBot.strat((df_promo.loc[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\"/\"THIRD_PARTY\")']).strip().upper()) == 'THIRD_PARTY':
+        elif PromoBot.strat((df_promo.loc[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\"/\"THIRD_PARTY\")']).strip().upper()) == 'ASSUMED_BY_THIRD_PARTY':
             if subject == 'glovo':
                 return 0
             if subject == 'partner':
