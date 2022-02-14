@@ -389,6 +389,7 @@ class PromoBot:
         if PromoBot.strat(subsidy) == "ASSUMED_BY_THIRD_PARTY":
             return [{"sponsorId":3,
                     "sponsorOrigin":"THIRD_PARTY",
+                    "sponsorName":"Third Party",
                     "subsidyValue": 100}]
                     #"subsidyValue":int(PromoBot.subsidyValue("partner", n))}]
         if PromoBot.strat(subsidy) == "ASSUMED_BY_BOTH":
