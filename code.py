@@ -27,7 +27,7 @@ from subprocess import call
 class PromoBot:
     global bot_name, exe_version_available, mode, df_promo, output_excel, output_path, platform
     bot_name = 'promobot'
-    exe_version_available = 1.1
+    exe_version_available = 1.2
     '''Init functions'''
     def exe_checker(exe_version):
         try:
@@ -368,7 +368,7 @@ class PromoBot:
         return f'ASSUMED_BY_{subsidy}'
 
     def paymentStrat(subsidy):
-        if PromoBot.strat(subsidy) == "ASSUMED_BY_GLOVO" or PromoBot.strat(subsidy) == "ASSUMED_BY_PARTNER":
+        if PromoBot.strat(subsidy) == "ASSUMED_BY_GLOVO" or PromoBot.strat(subsidy) == "ASSUMED_BY_PARTNER" or PromoBot.strat(subsidy) == "THIRD_PARTY":
             return PromoBot.strat(subsidy)
         else: 
             return "ASSUMED_BY_PARTNER"
@@ -382,6 +382,11 @@ class PromoBot:
         if PromoBot.strat(subsidy) == "ASSUMED_BY_PARTNER":
             return [{"sponsorId":2,
                     "sponsorOrigin":"PARTNER",
+                    "subsidyValue": 100}]
+                    #"subsidyValue":int(PromoBot.subsidyValue("partner", n))}]
+        if PromoBot.strat(subsidy) == "THIRD_PARTY":
+            return [{"sponsorId":3,
+                    "sponsorOrigin":"THIRD_PARTY",
                     "subsidyValue": 100}]
                     #"subsidyValue":int(PromoBot.subsidyValue("partner", n))}]
         if PromoBot.strat(subsidy) == "ASSUMED_BY_BOTH":
@@ -451,17 +456,22 @@ class PromoBot:
                 return sa_ID_list
 
     def subsidyValue(subject, n):
-        if PromoBot.strat((df_promo.loc[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\")']).strip().upper()) == 'ASSUMED_BY_GLOVO':
+        if PromoBot.strat((df_promo.loc[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\"/\"THIRD_PARTY\")']).strip().upper()) == 'ASSUMED_BY_GLOVO':
                 if subject == 'glovo':
                     return 100
                 if subject == 'partner':
                     return 0
-        elif PromoBot.strat((df_promo.loc[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\")']).strip().upper()) == 'ASSUMED_BY_PARTNER':
+        elif PromoBot.strat((df_promo.loc[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\"/\"THIRD_PARTY\")']).strip().upper()) == 'ASSUMED_BY_PARTNER':
             if subject == 'glovo':
                 return 0
             if subject == 'partner':
                 return 100
-        elif PromoBot.strat((df_promo.loc[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\")']).strip().upper()) == 'ASSUMED_BY_BOTH':
+        elif PromoBot.strat((df_promo.loc[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\"/\"THIRD_PARTY\")']).strip().upper()) == 'THIRD_PARTY':
+            if subject == 'glovo':
+                return 0
+            if subject == 'partner':
+                return 100
+        elif PromoBot.strat((df_promo.loc[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\"/\"THIRD_PARTY\")']).strip().upper()) == 'ASSUMED_BY_BOTH':
             if subject == 'glovo':
                 if df_promo.loc[n,"%GLOVO"] < 1:
                     return int(df_promo.loc[n,"%GLOVO"] * 100)
@@ -516,12 +526,12 @@ class PromoBot:
                         "endDate": PromoBot.time_code('end',df_promo.loc[n,"End_Date (included)"]),
                         "openingTimes": None,
                         "partners":[{"id": int(df_promo.loc[n,'Store_ID']),
-                                    "paymentStrategy": PromoBot.paymentStrat((df_promo.loc[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\")']).strip().upper()),
+                                    "paymentStrategy": PromoBot.paymentStrat((df_promo.loc[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\"/\"THIRD_PARTY\")']).strip().upper()),
                                     "externalIds": PromoBot.products_ID_list(n),
                                     "addresses": PromoBot.store_addresses_ID_list(n),
                                     "commissionOnDiscountedPrice":PromoBot.commissionOnDiscountedPrice(n),
                                     "subsidyStrategy":"BY_PERCENTAGE",
-                                    "sponsors":PromoBot.sponsors((df_promo.loc[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\")']).strip().upper(), n)}],
+                                    "sponsors":PromoBot.sponsors((df_promo.loc[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\"/\"THIRD_PARTY\")']).strip().upper(), n)}],
                                     # "sponsors":[{"sponsorId":1,
                                     #     "sponsorOrigin":"GLOVO",
                                     #     "subsidyValue":int(PromoBot.subsidyValue("glovo", n))},
