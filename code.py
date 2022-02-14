@@ -368,8 +368,10 @@ class PromoBot:
         return f'ASSUMED_BY_{subsidy}'
 
     def paymentStrat(subsidy):
-        if PromoBot.strat(subsidy) == "ASSUMED_BY_GLOVO" or PromoBot.strat(subsidy) == "ASSUMED_BY_PARTNER" or PromoBot.strat(subsidy) == "ASSUMED_BY_THIRD_PARTY":
+        if PromoBot.strat(subsidy) == "ASSUMED_BY_GLOVO" or PromoBot.strat(subsidy) == "ASSUMED_BY_PARTNER":
             return PromoBot.strat(subsidy)
+        elif PromoBot.strat(subsidy) == "ASSUMED_BY_THIRD_PARTY":
+            return "THIRD_PARTY"
         else: 
             return "ASSUMED_BY_PARTNER"
 
