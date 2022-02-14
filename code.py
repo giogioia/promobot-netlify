@@ -371,7 +371,7 @@ class PromoBot:
         if PromoBot.strat(subsidy) == "ASSUMED_BY_GLOVO" or PromoBot.strat(subsidy) == "ASSUMED_BY_PARTNER":
             return PromoBot.strat(subsidy)
         elif PromoBot.strat(subsidy) == "ASSUMED_BY_THIRD_PARTY":
-            return "THIRD_PARTY"
+            return "ASSUMED_BY_GLOVO"
         else: 
             return "ASSUMED_BY_PARTNER"
 
