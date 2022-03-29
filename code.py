@@ -355,12 +355,12 @@ class PromoBot:
     def perc(promo_type):
         if PromoBot.p_type(promo_type) == 'PERCENTAGE_DISCOUNT':
             if isinstance(promo_type,str):
-                return int((promo_type).strip('%'))
+                return float((promo_type).strip('%'))
             else:
                 if promo_type < 1:
-                    return int(promo_type * 100)
+                    return float(promo_type * 100)
                 else:
-                    return int(promo_type)
+                    return float(promo_type)
         else:
             return None
 
