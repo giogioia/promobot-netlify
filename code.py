@@ -545,7 +545,7 @@ class PromoBot:
                         "budget":PromoBot.with_budget(n),
                         "prime": PromoBot.is_prime(n)}
             print('PAYLOAD TEST:', payload)
-            sleep(10)
+            sleep(2)
             p = requests.post(url, headers = {'authorization' : access_token}, json = payload)
             if p.ok is False:
                 print(f'Promo {n} NOT CREATED')
