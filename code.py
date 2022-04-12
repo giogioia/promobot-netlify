@@ -548,7 +548,7 @@ class PromoBot:
             sleep(1)
             p = requests.post(url, headers = {'authorization' : access_token}, json = payload)
             sleep(1)
-            self.refresh()
+            PromoBot.refresh()
             if p.ok is False:
                 print(f'Promo {n} NOT CREATED')
                 if n == 0:
