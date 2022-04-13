@@ -545,7 +545,7 @@ class PromoBot:
                         "budget":PromoBot.with_budget(n),
                         "prime": PromoBot.is_prime(n)}
             print('PAYLOAD TEST:', payload)
-            sleep(2)
+            sleep(1)
             p = requests.post(url, headers = {'authorization' : access_token}, json = payload)
             if p.ok is False:
                 print(f'Promo {n} NOT CREATED')
@@ -581,7 +581,7 @@ class PromoBot:
                         delete = input(f'\nDelete promo {n}? [yes/no]\t')
                         if delete in ['yes','ye','y','si']:
                             url = f'https://adminapi.glovoapp.com/admin/partner_promotions/{int(df_promo.loc[n,"Promo_ID"])}'
-                            sleep(2)
+                            sleep(1)
                             r = requests.delete(url, headers  = {'authorization' : access_token})
                             if r.ok:
                                 df_promo.loc[n,'Status'] = 'deleted'
@@ -598,7 +598,7 @@ class PromoBot:
                 print(n,'already deleted')
             else:
                 url = f'https://adminapi.glovoapp.com/admin/partner_promotions/{int(df_promo.loc[n,"Promo_ID"])}'
-                sleep(2)
+                sleep(1)
                 r = requests.delete(url, headers  = {'authorization' : access_token})
                 if r.ok:
                     df_promo.loc[n,'Status'] = 'deleted'
@@ -615,7 +615,7 @@ class PromoBot:
                 df_promo.loc[n,'Promo_ID'] = df_promo.loc[n,'Promo_ID'].str.strip()
                 #df_promo.loc[n,'Promo_ID'] = sub("\D",'',df_promo.loc[n,'Promo_ID'])
             url = f"https://adminapi.glovoapp.com/admin/partner_promotions/{int(df_promo.loc[n,'Promo_ID'])}"
-            sleep(2)
+            sleep(1)
             p = requests.get(url, headers = {'authorization' : access_token})
             if p.ok is False:
                 try:
@@ -658,7 +658,15 @@ class PromoBot:
 
     '''launcher'''
     def launch(function):
-        for n in df_promo.index[:21]:
+        for n in df_promo.index[0:]:
+            try:
+                function(n)
+            except Exception as e:
+                print(f'Problem with data of promo {n} - unable to process')
+                print(repr(e))
+                pass
+        # We had to temporarly stop using multiprocessing due to Tech allowing max 1 petition per second
+        """for n in df_promo.index[:21]:
             try:
                 function(n)
             except Exception as e:
@@ -676,6 +684,7 @@ class PromoBot:
                         print(repr(e))
                         pass
             ###end multiprocessing process###
+            """
 
     '''driver'''
     def driver():
