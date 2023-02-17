@@ -515,81 +515,129 @@ class PromoBot:
             else:
                 return False
   
+    def get_menu(store_id: str) -> set:
+        global access_token
+
+        url = f"https://adminapi.glovoapp.com/admin/partner_promotions/products?storeId={store_id}"
+        p = requests.get(url, headers={"authorization": access_token})
+        sleep(2)
+        full_menu = p.json()
+        set_of_prod_ids = set()
+        for prod in full_menu:
+            tmp_prod_id = prod["externalId"]
+            set_of_prod_ids.add(tmp_prod_id)
+        return set_of_prod_ids
+  
     def creation(n):
         if df_promo.loc[n,'Status'] == 'created':
             print(n,'already created')
         else:
-            url = 'https://adminapi.glovoapp.com/admin/partner_promotions'
-            payload = {"name": df_promo.loc[n,'Promo_Name'],
-                        "cityCode": df_promo.loc[n,'City_Code'],
-                        "type": PromoBot.p_type(df_promo.loc[n,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")']),
-                        "percentage": PromoBot.perc(df_promo.loc[n,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")']),
-                        "deliveryFeeCents": PromoBot.del_fee(df_promo.loc[n,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")']),
-                        "startDate": PromoBot.time_code('start',df_promo.loc[n,"Start_Date (dd/mm/yyyy)"]),
-                        "endDate": PromoBot.time_code('end',df_promo.loc[n,"End_Date (included)"]),
-                        "openingTimes": None,
-                        "partners":[{"id": int(df_promo.loc[n,'Store_ID']),
-                                    "paymentStrategy": PromoBot.paymentStrat((df_promo.loc[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\")']).strip().upper()),
-                                    "externalIds": PromoBot.products_ID_list(n),
-                                    "addresses": PromoBot.store_addresses_ID_list(n),
-                                    "commissionOnDiscountedPrice":PromoBot.commissionOnDiscountedPrice(n),
-                                    "subsidyStrategy":"BY_PERCENTAGE",
-                                    "sponsors":PromoBot.sponsors((df_promo.loc[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\")']).strip().upper(), n)}],
-                                    # "sponsors":[{"sponsorId":1,
-                                    #     "sponsorOrigin":"GLOVO",
-                                    #     "subsidyValue":int(PromoBot.subsidyValue("glovo", n))},
-                                    #     {"sponsorId":2,
-                                    #     "sponsorOrigin":"PARTNER",
-                                    #     "subsidyValue":int(PromoBot.subsidyValue("partner", n))}]}],
-                        "customerTagId":None,
-                        "budget":PromoBot.with_budget(n),
-                        "prime": PromoBot.is_prime(n)}
-            print('PAYLOAD TEST:', payload)
-            sleep(1)
-            p = requests.post(url, headers = {'authorization' : access_token}, json = payload)
-            if p.ok is False:
-                print(f'Promo {n} NOT CREATED')
-                if n == 0:
-                    print(f'Promo {n} - {p.content}')
-                    confirmation = input(f'Continue promo creation? [yes,no]\t')
-                    print("\n")
-                    if confirmation in ['yes','ye','y','si']:
-                        pass
-                    else:
+            menu = PromoBot.get_menu(str(df_promo.loc[n,'Store_ID']))
+            products = PromoBot.products_ID_list(n)
+            final_prods = []
+            not_existing_prods = []
+            for prod in products:
+                if str(prod) in menu:
+                    final_prods.append(prod)
+                else:
+                    not_existing_prods.append(prod)
+            
+            if not_existing_prods and not final_prods:
+                print("")
+                print("The following products are not present in the menu of the store {}.".format(str(int(df_promo.loc[n,'Store_ID']))))
+                for p in not_existing_prods:
+                    print("> {}".format(p))
+                print("This product/s will be skipped.")
+                df_promo.loc[n,'Status'] = 'products not existing: {}'.format(",".join(not_existing_prods))
+                if n == len(df_promo) - 1:
+                    PromoBot.df_to_excel()
+                return None 
+            elif not_existing_prods:
+                print("")
+                print("Some of the products you specified are not existing in the menu of the store.")
+                print("Existing: {}".format(",".join(final_prods)))
+                print("Not existing: {}".format(",".join(not_existing_prods)))
+                confirmation = input("Do you want to create the promotion for the existing products? [yes/no] > ")
+                print("")
+                if confirmation in ['yes','ye','y','si']:
+                    pass
+                else:
+                    df_promo.loc[n,'Status'] = 'products not existing: {}'.format(",".join(not_existing_prods))
+                    if n == len(df_promo) - 1:
                         PromoBot.df_to_excel()
-                        sys.exit(0)
-                try:
-                    df_promo.loc[n,'Status'] = f"ERROR: {p.json()['error']['message']}"
-                except Exception:
-                    df_promo.loc[n,'Status'] = f"ERROR: {p.content}"
-                    if 'Bad request' in str(p.content):
-                        print(f'Promo {n} - status: NOT CREATED - INVALID INPUT DATA OR INACTIVE STORE ID')
-                else: df_promo.loc[n,'Status'] = f"ERROR: {p.json()['error']['message']}"
-                finally:
-                    print(f'ERROR: {p.text}')
-            else:
-                df_promo.loc[n,'Promo_ID'] = int(p.json()['id'])
-                df_promo.loc[n,'Status'] = 'created'
-                print(f'Promo {n} - status: created; id: {p.json()["id"]}')
-                if n == 0:
-                    print(f'\nPromo link: https://beta-admin.glovoapp.com/promotions/{p.json()["id"]}')
-                    print('Check if promo has been created as expected')
-                    confirmation = input(f'Continue promo creation ({len(df_promo)-1} promos left)? [yes,no]\n')
-                    if confirmation in ['yes','ye','y','si']:
-                        pass
-                    else:
-                        delete = input(f'\nDelete promo {n}? [yes/no]\t')
-                        if delete in ['yes','ye','y','si']:
-                            url = f'https://adminapi.glovoapp.com/admin/partner_promotions/{int(df_promo.loc[n,"Promo_ID"])}'
-                            sleep(1)
-                            r = requests.delete(url, headers  = {'authorization' : access_token})
-                            if r.ok:
-                                df_promo.loc[n,'Status'] = 'deleted'
-                                print(f'Promo {n} - deleted')
-                            else:
-                                print(f'Promo {n} - unable to delete', r.content)
-                        PromoBot.df_to_excel()
-                        sys.exit(0)
+                    return None
+
+            if final_prods:
+                url = 'https://adminapi.glovoapp.com/admin/partner_promotions'
+                payload = {"name": df_promo.loc[n,'Promo_Name'],
+                            "cityCode": df_promo.loc[n,'City_Code'],
+                            "type": PromoBot.p_type(df_promo.loc[n,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")']),
+                            "percentage": PromoBot.perc(df_promo.loc[n,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")']),
+                            "deliveryFeeCents": PromoBot.del_fee(df_promo.loc[n,'Promo_Type ("FLAT"/"FREE"/"XX%"/"2for1")']),
+                            "startDate": PromoBot.time_code('start',df_promo.loc[n,"Start_Date (dd/mm/yyyy)"]),
+                            "endDate": PromoBot.time_code('end',df_promo.loc[n,"End_Date (included)"]),
+                            "openingTimes": None,
+                            "partners":[{"id": int(df_promo.loc[n,'Store_ID']),
+                                        "paymentStrategy": PromoBot.paymentStrat((df_promo.loc[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\")']).strip().upper()),
+                                        "externalIds": final_prods,
+                                        "addresses": PromoBot.store_addresses_ID_list(n),
+                                        "commissionOnDiscountedPrice":PromoBot.commissionOnDiscountedPrice(n),
+                                        "subsidyStrategy":"BY_PERCENTAGE",
+                                        "sponsors":PromoBot.sponsors((df_promo.loc[n,'Subsidized_By (\"PARTNER\"/\"GLOVO\"/\"BOTH\")']).strip().upper(), n)}],
+                                        # "sponsors":[{"sponsorId":1,
+                                        #     "sponsorOrigin":"GLOVO",
+                                        #     "subsidyValue":int(PromoBot.subsidyValue("glovo", n))},
+                                        #     {"sponsorId":2,
+                                        #     "sponsorOrigin":"PARTNER",
+                                        #     "subsidyValue":int(PromoBot.subsidyValue("partner", n))}]}],
+                            "customerTagId":None,
+                            "budget":PromoBot.with_budget(n),
+                            "prime": PromoBot.is_prime(n)}
+                sleep(1)
+                p = requests.post(url, headers = {'authorization' : access_token}, json = payload)
+                if p.ok is False:
+                    print(f'Promo {n} NOT CREATED')
+                    if n == 0:
+                        print(f'Promo {n} - {p.content}')
+                        confirmation = input(f'Continue promo creation? [yes,no]\t')
+                        print("\n")
+                        if confirmation in ['yes','ye','y','si']:
+                            pass
+                        else:
+                            PromoBot.df_to_excel()
+                            sys.exit(0)
+                    try:
+                        df_promo.loc[n,'Status'] = f"ERROR: {p.json()['error']['message']}"
+                    except Exception:
+                        df_promo.loc[n,'Status'] = f"ERROR: {p.content}"
+                        if 'Bad request' in str(p.content):
+                            print(f'Promo {n} - status: NOT CREATED - INVALID INPUT DATA OR INACTIVE STORE ID')
+                    else: df_promo.loc[n,'Status'] = f"ERROR: {p.json()['error']['message']}"
+                    finally:
+                        print(f'ERROR: {p.text}')
+                else:
+                    df_promo.loc[n,'Promo_ID'] = int(p.json()['id'])
+                    df_promo.loc[n,'Status'] = 'created'
+                    print(f'Promo {n} - status: created; id: {p.json()["id"]}')
+                    if n == 0:
+                        print(f'\nPromo link: https://beta-admin.glovoapp.com/promotions/{p.json()["id"]}')
+                        print('Check if promo has been created as expected')
+                        confirmation = input(f'Continue promo creation ({len(df_promo)-1} promos left)? [yes,no]\n')
+                        if confirmation in ['yes','ye','y','si']:
+                            pass
+                        else:
+                            delete = input(f'\nDelete promo {n}? [yes/no]\t')
+                            if delete in ['yes','ye','y','si']:
+                                url = f'https://adminapi.glovoapp.com/admin/partner_promotions/{int(df_promo.loc[n,"Promo_ID"])}'
+                                sleep(1)
+                                r = requests.delete(url, headers  = {'authorization' : access_token})
+                                if r.ok:
+                                    df_promo.loc[n,'Status'] = 'deleted'
+                                    print(f'Promo {n} - deleted')
+                                else:
+                                    print(f'Promo {n} - unable to delete', r.content)
+                            PromoBot.df_to_excel()
+                            sys.exit(0)
 
     '''promo deletion'''
     def deletion(n):
